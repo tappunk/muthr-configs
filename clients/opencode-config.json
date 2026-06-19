@@ -1,0 +1,116 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "llama-cpp/__DEFAULT_MODEL__",
+  "small_model": "llama-cpp/__DEFAULT_MODEL__",
+  "autoupdate": false,
+
+  "disabled_providers": [
+    "opencode",
+    "github-copilot",
+    "openai",
+    "anthropic",
+    "google"
+  ],
+
+  "instructions": [
+    "If filesystem_edit_file fails, immediately fallback to write_file to replace the entire content.",
+    "CRITICAL ENV CONTEXT: You are running inside a isolated sandbox Lima VM (Debian 13 guest).",
+    "Your home directory config files are strictly inside `/home/user.guest/`, but your workspace project workspace is mounted 1-to-1 matching the host architecture paths.",
+    "Always perform file tracking and tool tasks relative to your active mounted workspace directory path parameter layout."
+  ],
+
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 8192
+  },
+
+  "permission": {
+    "*": "allow",
+    "bash": {
+      "rm *": "ask",
+      "sudo *": "ask",
+      "dd *": "ask",
+      "mkfs *": "ask",
+      ":() { : | :& }; :": "deny"
+    }
+  },
+
+  "provider": {
+    "llama-cpp": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (lima-vm)",
+      "options": {
+        "baseURL": "http://host.lima.internal:__LLAMA_PORT__/v1"
+      },
+      "models": {
+        "__DEFAULT_MODEL__": {
+          "name": "__DEFAULT_MODEL__",
+          "tools": true,
+          "context_window": __CTX_WINDOW__,
+          "limit": {
+            "context": __CTX_WINDOW__,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+
+  "mcp": {
+    "memory": {
+      "type": "local",
+      "command": ["mcp-server-memory"],
+      "enabled": true
+    },
+    "fetch": {
+      "type": "local",
+      "command": ["uvx", "mcp-server-fetch"],
+      "enabled": false
+    },
+    "filesystem": {
+      "type": "local",
+      "command": ["mcp-server-filesystem", "__INJECTED_MOUNT_POINT__"],
+      "enabled": true
+    },
+    "searxng": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-searxng", "--stdio"],
+      "enabled": false,
+      "environment": {
+        "SEARXNG_URL": "http://host.lima.internal:18766"
+      }
+    }
+  },
+
+  "agent": {
+    "plan": {
+      "mode": "primary",
+      "model": "llama-cpp/__DEFAULT_MODEL__"
+    },
+    "build": {
+      "mode": "primary",
+      "model": "llama-cpp/__DEFAULT_MODEL__"
+    },
+    "review": {
+      "mode": "subagent",
+      "model": "llama-cpp/__DEFAULT_MODEL__",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "explore": {
+      "mode": "subagent",
+      "model": "llama-cpp/__DEFAULT_MODEL__",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  },
+
+  "default_agent": "build"
+}

@@ -1,0 +1,62 @@
+# Lima template for a development sandbox VM
+# Self-contained — extends no base templates
+# Usage: muthr deploy dev-sandbox
+
+minimumLimaVersion: 2.0.0
+
+vmType: "vz"
+mountType: "virtiofs"
+
+images:
+  - location: "https://cloud.debian.org/images/cloud/trixie/20260525-2489/debian-13-genericcloud-arm64-20260525-2489.qcow2"
+    arch: "aarch64"
+    digest: "sha512:b4f9240559da2c044953418d0632cee4d45e3d447a0ec6a9129ef7946e39ec4135ec9e085c176f8dc77af6536d7279c03487e9aa61fd6c628fb493886e23aef5"
+  - location: "https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-genericcloud-arm64-daily.qcow2"
+    arch: "aarch64"
+
+cpus: 1
+memory: "2GiB"
+disk: "20GiB"
+
+mounts:
+  - location: "__WORKSPACE_ROOT__"
+    mountPoint: "__MOUNT_POINT__"
+    writable: true
+
+containerd:
+  user: true
+
+ssh:
+  forwardAgent: false
+
+hostResolver:
+  enabled: true
+  ipv6: false
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+
+      export DEBIAN_FRONTEND=noninteractive
+
+      echo "Installing development tools..."
+      apt-get install -y \
+        git curl wget unzip htop neovim ca-certificates gnupg \
+        nodejs npm python3 build-essential \
+        ncurses-term
+
+      # Ghostty terminfo (only if ghostty is installed)
+      if command -v ghostty >/dev/null 2>&1; then
+          mkdir -p /lib/terminfo/x
+          [ -f /usr/share/terminfo/g/ghostty ] && \
+              ln -sf /usr/share/terminfo/g/ghostty /lib/terminfo/x/xterm-ghostty
+      fi
+
+      echo "Upgrading npm..."
+      npm install -g --loglevel=silent npm@latest
+
+      echo "========================================"
+      echo "Base VM provisioning complete"
+      echo "========================================"
