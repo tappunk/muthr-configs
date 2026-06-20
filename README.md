@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![X Follow](https://img.shields.io/twitter/follow/tappunk?style=social)](https://x.com/tappunk)
 
-# muthr-configs
+# muthr-specs
 
 Lima templates, model presets, and provisioning scripts for [muthr](https://github.com/tappunk/muthr).
 
@@ -32,7 +32,7 @@ muthr up
 ## Structure
 
 ```
-muthr-configs/
+muthr-specs/
 ├── catalog.json              # Profile registry (name, description, tags)
 ├── clients/                  # Client configuration templates
 │   └── opencode-config.json  # OpenCode config template (injected into VMs)
