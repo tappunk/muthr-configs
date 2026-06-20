@@ -15,7 +15,7 @@ if ! limactl ls -q | grep -q "^${VM_NAME}$"; then
     exit 1
 fi
 
-if limactl shell --workdir /tmp "${VM_NAME}" -- bash -c 'test -f /var/log/opencode_provision.lock' 2>/dev/null; then
+if limactl shell --workdir /tmp "${VM_NAME}" -- bash -c 'test -f "$HOME/.muthr_provision.lock"' 2>/dev/null; then
     echo "[WARN] OpenCode stack tracking indicates environment is already prepared. Skipping."
     exit 0
 fi
@@ -47,8 +47,6 @@ limactl shell --workdir /tmp "${VM_NAME}" -- bash -c "
     rm /tmp/opencode.tar.gz
 "
 
-limactl shell --workdir /tmp "${VM_NAME}" -- bash -c "
-    sudo touch /var/log/opencode_provision.lock
-"
+limactl shell --workdir /tmp "${VM_NAME}" -- bash -c 'touch "$HOME/.muthr_provision.lock"'
 
 echo "[ OK ] Agent execution workspace environment online for ${VM_NAME}!"
