@@ -48,7 +48,7 @@ echo "[PROC] Ensuring mcp-searxng is installed..."
 if [ ! -f "${MCP_DIR}/lib/node_modules/mcp-searxng/dist/cli.js" ]; then
   echo "[PROC] Installing mcp-searxng..."
   mkdir -p "${MCP_DIR}/lib"
-  npm install -g --prefix "${MCP_DIR}" mcp-searxng
+  npm install -g --prefix "${MCP_DIR}" --yes mcp-searxng
 fi
 
 if [ ! -f "$HOME/mcp-stdio.sh" ]; then

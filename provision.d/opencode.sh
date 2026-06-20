@@ -29,7 +29,7 @@ limactl shell --workdir /tmp "${VM_NAME}" -- bash -c "
 
 echo "[PROC] Syncing global secure Node Model Context Protocol servers..."
 limactl shell --workdir /tmp "${VM_NAME}" -- bash -c "
-    sudo npm install -g --loglevel=silent \
+    sudo npm install -g --loglevel=silent --yes \
         @ai-sdk/openai-compatible \
         @modelcontextprotocol/server-memory \
         @modelcontextprotocol/server-filesystem
