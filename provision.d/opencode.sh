@@ -41,7 +41,7 @@ rm /tmp/opencode.tar.gz
 echo "[PROC] Generating OpenCode configuration..."
 mkdir -p "$HOME/.opencode"
 
-cat > "$HOME/.opencode/opencode.jsonc" << EOF
+cat > "$HOME/.opencode/opencode.json" << EOF
 {
   "\$schema": "https://opencode.ai/config.json",
   "model": "llama-cpp/${MODEL_NAME}",
