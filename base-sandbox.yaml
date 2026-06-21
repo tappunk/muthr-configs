@@ -1,6 +1,6 @@
-# Lima template for a development sandbox VM
-# Self-contained — extends no base templates
-# Usage: muthr deploy dev-sandbox
+# Base Lima template — shared by all profiles
+# Self-contained — Debian 13 with vz VM type and Apple Virtualization.framework
+# Extend this in your profile templates if you need different resources (cpus/memory/disk)
 
 minimumLimaVersion: 2.0.0
 
@@ -14,14 +14,16 @@ images:
   - location: "https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-genericcloud-arm64-daily.qcow2"
     arch: "aarch64"
 
-cpus: 1
-memory: "2GiB"
-disk: "20GiB"
+cpus: 2
+memory: "4GiB"
+disk: "50GiB"
 
 mounts:
   - location: "__WORKSPACE_ROOT__"
     mountPoint: "__MOUNT_POINT__"
     writable: true
+
+upgradePackages: true
 
 containerd:
   user: true
@@ -38,16 +40,18 @@ provision:
     script: |
       #!/bin/bash
       set -eux -o pipefail
-
       export DEBIAN_FRONTEND=noninteractive
 
-      echo "Installing development tools..."
+      echo "Updating package lists..."
+      apt-get update
+
+      echo "Installing base development tools..."
       apt-get install -y \
         git curl wget unzip htop neovim ca-certificates gnupg \
         nodejs npm python3 build-essential \
-        ncurses-term
+        ncurses-term ripgrep fd-find
 
-      # Ghostty terminfo (only if ghostty is installed)
+      # Ghostty terminfo (only if ghostty is installed on host)
       if command -v ghostty >/dev/null 2>&1; then
           mkdir -p /lib/terminfo/x
           [ -f /usr/share/terminfo/g/ghostty ] && \
@@ -57,6 +61,4 @@ provision:
       echo "Upgrading npm..."
       npm install -g --loglevel=silent npm@latest
 
-      echo "========================================"
       echo "Base VM provisioning complete"
-      echo "========================================"
