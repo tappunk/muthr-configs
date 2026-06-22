@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+OPENCODE_VERSION="v1.17.9"
+OPENCODE_TARBALL="opencode-linux-arm64.tar.gz"
+OPENCODE_SHA256="8cc511f9794e575e5d3c4c2654930d05670186df649c26b50889ac73c65dde21"
+OPENCODE_URL="https://github.com/anomalyco/opencode/releases/download/${OPENCODE_VERSION}/${OPENCODE_TARBALL}"
+
+UV_INSTALL_SHA256="f2217f2fe451df47895a580143e2707b59c995186b47dfaa2e92b1aedf0dc764"
+
+MCP_OPENAI_COMPATIBLE_VERSION="2.0.51"
+MCP_MEMORY_VERSION="2026.1.26"
+
 # Runtime values injected by muthr at execution time:
 #   MUTHR_OPENAI_URL      http://host.lima.internal:8080/v1
 #   MUTHR_MODEL_NAME      01-qwen3-6-35b-a3b
@@ -26,16 +36,20 @@ fi
 
 echo "[PROC] Installing MCP servers (memory)..."
 sudo npm install -g --loglevel=silent --yes \
-    @ai-sdk/openai-compatible \
-    @modelcontextprotocol/server-memory
+    "@ai-sdk/openai-compatible@${MCP_OPENAI_COMPATIBLE_VERSION}" \
+    "@modelcontextprotocol/server-memory@${MCP_MEMORY_VERSION}"
 
 echo "[PROC] Deploying Astral UV package manager..."
-curl -LsSf https://astral.sh/uv/install.sh | sudo env UV_INSTALL_DIR='/usr/local/bin' sh
+curl -fsSL "https://astral.sh/uv/install.sh" -o /tmp/uv-install.sh
+echo "${UV_INSTALL_SHA256}  /tmp/uv-install.sh" | sha256sum -c -
+sudo env UV_INSTALL_DIR='/usr/local/bin' sh /tmp/uv-install.sh
+rm -f /tmp/uv-install.sh
 
 echo "[PROC] Installing OpenCode CLI from GitHub releases..."
-curl -fsSL -o /tmp/opencode.tar.gz 'https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-arm64.tar.gz'
+curl -fsSL -o /tmp/opencode.tar.gz "${OPENCODE_URL}"
+echo "${OPENCODE_SHA256}  /tmp/opencode.tar.gz" | sha256sum -c -
 sudo tar -xzf /tmp/opencode.tar.gz -C /usr/local/bin/ opencode
-rm /tmp/opencode.tar.gz
+rm -f /tmp/opencode.tar.gz
 
 echo "[PROC] Generating OpenCode configuration..."
 mkdir -p "$HOME/.opencode"
