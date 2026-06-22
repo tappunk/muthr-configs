@@ -34,10 +34,11 @@ if ! command -v npm &>/dev/null; then
     sudo apt-get update -qq && sudo apt-get install -y -qq nodejs npm
 fi
 
-echo "[PROC] Installing MCP servers (memory)..."
+echo "[PROC] Installing MCP servers (memory + filesystem)..."
 sudo npm install -g --loglevel=silent --yes \
     "@ai-sdk/openai-compatible@${MCP_OPENAI_COMPATIBLE_VERSION}" \
-    "@modelcontextprotocol/server-memory@${MCP_MEMORY_VERSION}"
+    "@modelcontextprotocol/server-memory@${MCP_MEMORY_VERSION}" \
+    "@modelcontextprotocol/server-filesystem"
 
 echo "[PROC] Deploying Astral UV package manager..."
 curl -fsSL "https://astral.sh/uv/install.sh" -o /tmp/uv-install.sh
@@ -127,7 +128,7 @@ cat > "$HOME/.opencode/opencode.json" << EOF
     },
     "filesystem": {
       "type": "local",
-      "command": ["uvx", "mcp-server-filesystem", "${WORKSPACE_MOUNT}"],
+      "command": ["mcp-server-filesystem", "${WORKSPACE_MOUNT}"],
       "enabled": true
     },
     "searxng": {
