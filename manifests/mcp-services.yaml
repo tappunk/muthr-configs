@@ -29,7 +29,6 @@ ssh:
 hostResolver:
   enabled: true
   ipv6: false
-  hosts: { "host.lima.internal": host }
 
 portForwards:
   - guestPort: 8080
