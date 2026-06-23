@@ -10,6 +10,7 @@ UV_INSTALL_SHA256="f2217f2fe451df47895a580143e2707b59c995186b47dfaa2e92b1aedf0dc
 
 MCP_OPENAI_COMPATIBLE_VERSION="2.0.51"
 MCP_MEMORY_VERSION="2026.1.26"
+MCP_FILESYSTEM_VERSION="2026.2.26"
 
 # Runtime values injected by muthr at execution time:
 #   MUTHR_OPENAI_URL      http://host.lima.internal:8080/v1
@@ -38,7 +39,7 @@ echo "[PROC] Installing MCP servers (memory + filesystem)..."
 sudo npm install -g --loglevel=silent --yes \
     "@ai-sdk/openai-compatible@${MCP_OPENAI_COMPATIBLE_VERSION}" \
     "@modelcontextprotocol/server-memory@${MCP_MEMORY_VERSION}" \
-    "@modelcontextprotocol/server-filesystem"
+    "@modelcontextprotocol/server-filesystem@${MCP_FILESYSTEM_VERSION}"
 
 echo "[PROC] Deploying Astral UV package manager..."
 curl -fsSL "https://astral.sh/uv/install.sh" -o /tmp/uv-install.sh
