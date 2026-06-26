@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
+
+# shellcheck source=provision.d/lib/provision-lib.sh
+source "$(dirname "$0")/lib/provision-lib.sh"
 
 OPENCODE_VERSION="v1.17.9"
 OPENCODE_TARBALL="opencode-linux-arm64.tar.gz"
@@ -11,12 +15,13 @@ UV_INSTALL_SHA256="b3c113bcb8b5f361805bc2283cb1bcc8f3e07b5f0387a12e4f6e71281f7ec
 MCP_OPENAI_COMPATIBLE_VERSION="2.0.51"
 MCP_MEMORY_VERSION="2026.1.26"
 MCP_FILESYSTEM_VERSION="2026.1.14"
+PROFILE_REV="2026-06-26.1"
 
 # Runtime values injected by muthr at execution time:
 #   MUTHR_OPENAI_URL      http://host.lima.internal:8080/v1
 #   MUTHR_MODEL_NAME      01-qwen3-6-35b-a3b
 #   MUTHR_CTX_WINDOW      262144
-#   MUTHR_WORKSPACE_MOUNT /muthr-project1
+#   MUTHR_WORKSPACE_MOUNT /workspace
 
 OPENAI_URL="${MUTHR_OPENAI_URL:-http://host.lima.internal:8080/v1}"
 MODEL_NAME="${MUTHR_MODEL_NAME:-01-qwen3-6-35b-a3b}"
@@ -25,10 +30,7 @@ WORKSPACE_MOUNT="${MUTHR_WORKSPACE_MOUNT:-/workspace}"
 
 echo "[PROC] Commencing opencode workspace provision for target VM..."
 
-if test -f "$HOME/.muthr_provision.lock" 2>/dev/null; then
-    echo "[WARN] Opencode stack tracking indicates environment is already prepared. Skipping."
-    exit 0
-fi
+_lib_init_provision_state "opencode" "$PROFILE_REV" "$OPENAI_URL" "$MODEL_NAME" "$CTX_WINDOW" "$WORKSPACE_MOUNT"
 
 export DEBIAN_FRONTEND=noninteractive
 if ! command -v npm &>/dev/null; then
@@ -36,11 +38,9 @@ if ! command -v npm &>/dev/null; then
     sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs npm
 fi
 
-echo "[PROC] Installing MCP servers (memory + filesystem)..."
+echo "[PROC] Installing OpenAI-compatible provider package..."
 sudo npm install -g --loglevel=silent --yes \
-    "@ai-sdk/openai-compatible@${MCP_OPENAI_COMPATIBLE_VERSION}" \
-    "@modelcontextprotocol/server-memory@${MCP_MEMORY_VERSION}" \
-    "@modelcontextprotocol/server-filesystem@${MCP_FILESYSTEM_VERSION}"
+    "@ai-sdk/openai-compatible@${MCP_OPENAI_COMPATIBLE_VERSION}"
 
 echo "[PROC] Deploying Astral UV package manager..."
 curl -fsSL "https://astral.sh/uv/install.sh" -o /tmp/uv-install.sh
@@ -120,7 +120,7 @@ cat > "$HOME/.opencode/opencode.json" << EOF
   "mcp": {
     "memory": {
       "type": "local",
-      "command": ["mcp-server-memory"],
+      "command": ["npx", "-y", "@modelcontextprotocol/server-memory@${MCP_MEMORY_VERSION}"],
       "enabled": true
     },
     "fetch": {
@@ -130,7 +130,7 @@ cat > "$HOME/.opencode/opencode.json" << EOF
     },
     "filesystem": {
       "type": "local",
-      "command": ["mcp-server-filesystem", "${WORKSPACE_MOUNT}"],
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem@${MCP_FILESYSTEM_VERSION}", "${WORKSPACE_MOUNT}"],
       "enabled": true
     },
     "searxng": {
@@ -176,7 +176,10 @@ cat > "$HOME/.opencode/opencode.json" << EOF
 }
 EOF
 
-touch "$HOME/.muthr_provision.lock"
+chmod 700 "$HOME/.opencode"
+chmod 600 "$HOME/.opencode/opencode.json"
+
+_lib_finalize_provision_state
 
 echo "[ OK ] Opencode environment initialized successfully."
 echo ""

@@ -76,7 +76,7 @@
     "searxng": {
       "type": "local",
       "command": ["npx", "-y", "mcp-searxng", "--stdio"],
-      "enabled": false,
+      "enabled": true,
       "environment": {
         "SEARXNG_URL": "http://host.lima.internal:18766"
       }

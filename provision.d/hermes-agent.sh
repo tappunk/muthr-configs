@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
+
+# shellcheck source=provision.d/lib/provision-lib.sh
+source "$(dirname "$0")/lib/provision-lib.sh"
 
 UV_INSTALL_SHA256="f2217f2fe451df47895a580143e2707b59c995186b47dfaa2e92b1aedf0dc764"
 NVM_INSTALL_VERSION="v0.40.1"
@@ -12,13 +16,11 @@ HERMES_INSTALL_SHA256="dbd9d555ed4ac67bd1fc71ba6a39b410cf2af0ebcfd8f4889e086af78
 
 OPENAI_URL="${MUTHR_OPENAI_URL:-http://host.lima.internal:8080/v1}"
 MODEL_NAME="${MUTHR_MODEL_NAME:-01-qwen3-6-35b-a3b}"
+WORKSPACE_MOUNT="${MUTHR_WORKSPACE_MOUNT:-/workspace}"
 
 echo "[PROC] Commencing Hermes Agent workspace provision for target VM..."
 
-if test -f "$HOME/.muthr_provision.lock" 2>/dev/null; then
-    echo "[WARN] Hermes stack tracking indicates environment is already prepared. Skipping."
-    exit 0
-fi
+_lib_init_provision_state "hermes-agent" "$OPENAI_URL" "$MODEL_NAME" "$WORKSPACE_MOUNT"
 
 echo "[PROC] Installing Python and uv package manager..."
 curl -fsSL "https://astral.sh/uv/install.sh" -o /tmp/uv-install.sh
@@ -71,14 +73,17 @@ mcp_servers:
     args: []
   filesystem:
     command: mcp-server-filesystem
-    args: ["${MUTHR_WORKSPACE_MOUNT:-/workspace}"]
+    args: ["${WORKSPACE_MOUNT}"]
 
 session_reset:
   mode: both
   idle_minutes: 1440
 EOF
 
-touch "$HOME/.muthr_provision.lock"
+chmod 700 "$HOME/.hermes"
+chmod 600 "$HOME/.hermes/config.yaml"
+
+_lib_finalize_provision_state
 
 echo "[ OK ] Hermes Agent environment initialized successfully."
 echo ""
