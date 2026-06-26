@@ -50,17 +50,38 @@ provision:
     script: |
       #!/bin/bash
       set -eux -o pipefail
+      umask 077
 
       export DEBIAN_FRONTEND=noninteractive
-      SearxngDir="{{.Home}}/searxng"
-      MCP_DIR="{{.Home}}/.local"
+      SEARXNG_COMMIT="952896d29e1fdea8d2be89bf656c97036979f059"
+      SEARXNG_COMPOSE_URL="https://raw.githubusercontent.com/searxng/searxng/${SEARXNG_COMMIT}/container/docker-compose.yml"
+      SEARXNG_COMPOSE_SHA256="f476d3f9c5be24216ba1c762bffdb5985b64187559d869e15da3518dfd8b5a15"
+      MCP_SEARXNG_VERSION="1.7.2"
+      SearxngDir="$HOME/searxng"
+      MCP_DIR="$HOME/.local"
+      LOCK_FILE="$HOME/.muthr_provision.lock"
+      ENV_FINGERPRINT="muthr-services|${SEARXNG_COMMIT}|${SEARXNG_COMPOSE_SHA256}|${MCP_SEARXNG_VERSION}"
+
+      if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null || true)" == "$ENV_FINGERPRINT" ]]; then
+        echo "[INFO] environment already up to date with this target configuration profile."
+        exit 0
+      fi
+
+      cleanup() {
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+          rm -f "$LOCK_FILE"
+        fi
+      }
+      trap cleanup EXIT
 
       if [ ! -f "${SearxngDir}/docker-compose.yml" ]; then
         mkdir -p "${SearxngDir}"
 
         curl -fsSL \
           -o "${SearxngDir}/docker-compose.yml" \
-          "https://raw.githubusercontent.com/searxng/searxng/master/container/docker-compose.yml"
+          "${SEARXNG_COMPOSE_URL}"
+        echo "${SEARXNG_COMPOSE_SHA256}  ${SearxngDir}/docker-compose.yml" | sha256sum -c -
 
         SECRET_KEY=$(openssl rand -hex 32)
         printf 'SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml\nSEARXNG_SECRET=%s\n' "${SECRET_KEY}" > "${SearxngDir}/.env"
@@ -72,17 +93,20 @@ provision:
 
       if [ ! -f "${MCP_DIR}/lib/node_modules/mcp-searxng/dist/cli.js" ]; then
         mkdir -p "${MCP_DIR}/lib"
-        npm install -g --prefix "${MCP_DIR}" mcp-searxng
+        npm install -g --prefix "${MCP_DIR}" --yes "mcp-searxng@${MCP_SEARXNG_VERSION}"
       fi
 
-      if [ ! -f "{{.Home}}/mcp-stdio.sh" ]; then
-        printf '%s\n' '#!/bin/bash' 'set -euo pipefail' "exec bash -l -c 'SEARXNG_URL=http://localhost:8080 node {{.Home}}/.local/lib/node_modules/mcp-searxng/dist/cli.js --stdio'" > "{{.Home}}/mcp-stdio.sh"
-        chmod +x "{{.Home}}/mcp-stdio.sh"
+      if [ ! -f "$HOME/mcp-stdio.sh" ]; then
+        printf '%s\n' '#!/bin/bash' 'set -euo pipefail' "exec bash -l -c 'SEARXNG_URL=http://localhost:8080 node $HOME/.local/lib/node_modules/mcp-searxng/dist/cli.js --stdio'" > "$HOME/mcp-stdio.sh"
+        chmod +x "$HOME/mcp-stdio.sh"
       fi
 
-      if ! grep -qF 'mcp-searxng PATH' "{{.Home}}/.zshenv" 2>/dev/null; then
-        printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "{{.Home}}/.zshenv"
+      if ! grep -qF 'mcp-searxng PATH' "$HOME/.zshenv" 2>/dev/null; then
+        printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$HOME/.zshenv"
       fi
+
+      printf '%s\n' "$ENV_FINGERPRINT" > "$LOCK_FILE"
+      chmod 600 "$LOCK_FILE"
 
       echo "========================================================"
       echo "[ OK ] muthr-services VM provisioning complete"

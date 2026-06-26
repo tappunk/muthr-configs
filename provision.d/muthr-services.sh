@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
 
 VM_NAME="${1:-}"
 
@@ -7,6 +8,11 @@ echo "[PROC] muthr-services VM provisioning — SearXNG (containerd) + mcp-searx
 
 if [[ -z "${VM_NAME}" ]]; then
     echo "[ERR] Target VM name required. Usage: $0 <vm-name>"
+    exit 1
+fi
+
+if [[ ! "${VM_NAME}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "[ERR] Invalid VM name: ${VM_NAME}"
     exit 1
 fi
 
@@ -21,8 +27,9 @@ if ! _vm_reachable; then
 fi
 
 _vm_run() {
-    limactl shell --workdir /tmp "$VM_NAME" -- bash -s << 'EOF'
+    limactl shell --workdir /tmp "$VM_NAME" -- bash -s < <(cat << 'EOF'
 set -euo pipefail
+umask 077
 export DEBIAN_FRONTEND=noninteractive
 
 SEARXNG_COMMIT="952896d29e1fdea8d2be89bf656c97036979f059"
@@ -32,6 +39,21 @@ MCP_SEARXNG_VERSION="1.7.2"
 
 MCP_DIR="$HOME/.local"
 SearxngDir="$HOME/searxng"
+LOCK_FILE="$HOME/.muthr_provision.lock"
+ENV_FINGERPRINT="muthr-services|${SEARXNG_COMMIT}|${SEARXNG_COMPOSE_SHA256}|${MCP_SEARXNG_VERSION}"
+
+if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null || true)" == "$ENV_FINGERPRINT" ]]; then
+  echo "[INFO] environment already up to date with this target configuration profile."
+  exit 0
+fi
+
+cleanup() {
+  local exit_code=$?
+  if [[ $exit_code -ne 0 ]]; then
+    rm -f "$LOCK_FILE"
+  fi
+}
+trap cleanup EXIT
 
 if [ ! -f "${SearxngDir}/docker-compose.yml" ]; then
   echo "[PROC] Setting up SearXNG container..."
@@ -67,8 +89,12 @@ if ! grep -qF 'mcp-searxng PATH' "$HOME/.zshenv" 2>/dev/null; then
   printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$HOME/.zshenv"
 fi
 
+printf '%s\n' "$ENV_FINGERPRINT" > "$LOCK_FILE"
+chmod 600 "$LOCK_FILE"
+
 echo "[ OK ] muthr-services VM provisioning complete"
 EOF
+)
 }
 
 _vm_run
