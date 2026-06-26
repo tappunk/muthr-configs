@@ -48,9 +48,9 @@ muthr sandbox start          # Create a sandbox for the current project
 
 ```
 muthr-specs/
-├── base-sandbox.yaml           ← Shared Lima template (Debian 13, vz, mounts, base provision)
 ├── manifests/
-│   ├── base/debian-vz.yaml     ← Base manifest used for sandbox profile resolution
+│   ├── base-sandbox.yaml        ← Shared sandbox template (Debian 13, vz, mounts, base provision)
+│   ├── base/debian-vz.yaml      ← Base manifest fragment for profile composition
 │   └── muthr-services.yaml     ← Persistent muthr-services VM manifest (SearXNG + MCP)
 ├── provider.d/llama-cpp/       ← llama.cpp preset profiles (INI format)
 │   ├── bw150g-qwen3.5-9b.ini
@@ -88,11 +88,11 @@ Persistent services VM. Runs SearXNG (web search) and mcp-searxng (MCP tool for 
 
 ## Lima Templates
 
-### base-sandbox.yaml
+### manifests/base-sandbox.yaml
 
 The shared foundation for all sandbox profiles. Defines Debian 13 with vz VM type, workspace mounts using `__WORKSPACE_ROOT__` and `__MOUNT_POINT__` placeholders, and inline system provision for base packages.
 
-muthr substitutes the placeholders with the actual workspace path before creating the VM. If a profile has its own YAML manifest (e.g. `opencode.yaml`), muthr uses that first, falling back to `base-sandbox.yaml` for any undefined fields.
+muthr substitutes the placeholders with the host project root and an internal guest mount path before creating the VM. If a profile has its own YAML manifest (e.g. `opencode.yaml`), muthr uses that first, falling back to `manifests/base-sandbox.yaml` for any undefined fields.
 
 ### Template defaults
 
@@ -117,7 +117,7 @@ Scripts in `provision.d/` are copied into sandbox VMs via `limactl cp` and execu
 | `MUTHR_OPENAI_URL`      | `http://host.lima.internal:8080/v1` | Inference engine endpoint (OpenAI-compatible) |
 | `MUTHR_MODEL_NAME`      | `01-qwen3-6-35b-a3b`                | Model identifier from the active preset       |
 | `MUTHR_CTX_WINDOW`      | `262144`                            | Context window size                           |
-| `MUTHR_WORKSPACE_MOUNT` | `/muthr-project1`                   | Workspace path inside the VM                  |
+| `MUTHR_WORKSPACE_MOUNT` | `/workspace`                        | Workspace path inside the VM                  |
 
 Provision scripts use these variables to generate native client configs and install applications that connect to the host inference engine.
 
