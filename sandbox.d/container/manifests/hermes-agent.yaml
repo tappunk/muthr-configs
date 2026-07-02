@@ -1,0 +1,11 @@
+# Turnkey workspace profile metadata for Nous Research Hermes-Agent instances
+profile: hermes-agent
+image: docker.io/arm64v8/debian:13-slim
+resources:
+  cpus: 4
+  memory: 8GiB
+security:
+  network: restricted
+  workspace_mode: direct
+mounts:
+  workspace: /workspace

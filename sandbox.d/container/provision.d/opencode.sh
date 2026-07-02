@@ -8,6 +8,7 @@ source "$(dirname "$0")/lib/provision-lib.sh"
 PROFILE_REV="2026-06-28.6"
 
 # Runtime values injected by muthr at execution time:
+#   MUTHR_INFERENCE_URL   http://<backend-gateway>:8080/v1
 #   MUTHR_OPENAI_URL      http://<backend-gateway>:8080/v1
 #   MUTHR_MODEL_NAME      01-qwen3-6-35b-a3b
 #   MUTHR_CTX_WINDOW      262144
@@ -17,7 +18,11 @@ PROFILE_REV="2026-06-28.6"
 #   MUTHR_SEARXNG_URL      http://<container-gateway>:18766
 #   MUTHR_ENGINE_RUNTIME   inference runtime provider key (mlxcel, llama)
 
-OPENAI_URL="${MUTHR_OPENAI_URL:?MUTHR_OPENAI_URL is required}"
+OPENAI_URL="${MUTHR_INFERENCE_URL:-${MUTHR_OPENAI_URL:-}}"
+if [[ -z "$OPENAI_URL" ]]; then
+    echo "[ERR] MUTHR_INFERENCE_URL (or MUTHR_OPENAI_URL) is required" >&2
+    exit 1
+fi
 MODEL_NAME="${MUTHR_MODEL_NAME:?MUTHR_MODEL_NAME is required}"
 CTX_WINDOW="${MUTHR_CTX_WINDOW:?MUTHR_CTX_WINDOW is required}"
 WORKSPACE_MOUNT="${MUTHR_WORKSPACE_MOUNT:-/workspace}"

@@ -1,6 +1,6 @@
 # Container sandbox profile metadata (container backend)
 profile: base
-image: debian:13-slim
+image: docker.io/arm64v8/debian:13-slim
 resources:
   cpus: 2
   memory: 4GiB

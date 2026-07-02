@@ -5,7 +5,9 @@
 
 # muthr-specs
 > \[!NOTE]
-> Experimental not for production use
+> Source-of-truth specs deployed by `muthr init` into `~/.config/muthr/`.
+
+Canonical documentation: **https://tappunk.com/muthr/**
 
 Configuration files for [muthr](https://github.com/tappunk/muthr).
 
@@ -32,6 +34,7 @@ muthr-specs/
 ├── sandbox.d/container/
 │   ├── manifests/               # Container manifests
 │   └── provision.d/             # Provision scripts + shared lib/
+├── provider.d/                  # Engine model presets (INI)
 ├── clients/                     # Reference config templates
 └── LICENSE
 ```
@@ -50,13 +53,35 @@ Minimal Debian 13 container.
 
 Installs opencode CLI and MCP servers.
 
+### hermes-agent
+
+Installs the Hermes-Agent runtime in an isolated Python/uv environment.
+
 ### muthr-services
 
 Persistent services container for SearXNG and MCP bridge.
 
+### provider presets
+
+Preset INI files in `provider.d/{mlxcel,llama}/` are consumed by `muthr` runtime selection and `engine presets` output.
+
 ## Environment Variables
 
 See [muthr](https://github.com/tappunk/muthr) for environment variable documentation.
+
+Runtime contract highlights:
+
+- `MUTHR_INFERENCE_URL` primary inference endpoint inside the sandbox
+- `MUTHR_OPENAI_URL` compatibility alias of inference endpoint
+- `MUTHR_MCP_BRIDGE_URL` MCP bridge endpoint exposed by `muthr-services`
+- `MUTHR_SEARXNG_URL` SearXNG endpoint exposed by `muthr-services`
+
+For restricted profiles, use `muthr image build --profile <name>` to pre-bake golden images and avoid WAN bootstrap at sandbox start.
+
+Workspace safety:
+
+- Set `workspace_root` / `MUTHR_WORKSPACE_ROOT` to a dedicated subdirectory (for example `~/src`), never `$HOME`.
+- `muthr` rejects `$HOME` as workspace root to prevent mounting your entire home directory into sandbox containers.
 
 ## Script conventions
 
@@ -71,3 +96,9 @@ See [muthr](https://github.com/tappunk/muthr) for environment variable documenta
 3. Optionally add a reference template under `clients/`
 
 See [muthr](https://github.com/tappunk/muthr) for usage and architecture.
+
+## Acknowledgements
+
+- [llama.cpp](https://github.com/ggml-org/llama.cpp)
+- [mlxcel](https://github.com/lablup/mlxcel)
+- [Apple container](https://github.com/apple/container)

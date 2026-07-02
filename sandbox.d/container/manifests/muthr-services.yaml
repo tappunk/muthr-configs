@@ -1,6 +1,6 @@
 # muthr-services container profile metadata (container backend)
 profile: muthr-services
-image: debian:13-slim
+image: docker.io/arm64v8/debian:13-slim
 ports:
   - host: 18766
     container: 8080

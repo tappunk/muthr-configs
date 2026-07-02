@@ -1,0 +1,11 @@
+# Turnkey workspace profile metadata for OpenCode assist instances
+profile: opencode
+image: docker.io/arm64v8/debian:13-slim
+resources:
+  cpus: 4
+  memory: 6GiB
+security:
+  network: host
+  workspace_mode: direct
+mounts:
+  workspace: /workspace
